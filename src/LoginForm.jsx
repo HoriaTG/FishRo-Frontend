@@ -1,20 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { loginUser, saveToken } from "./api";
 
-export default function LoginForm({ onLogin, resetKey }) {
+export default function LoginForm({ onLogin}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    setEmail("");
-    setPassword("");
-    setMsg("");
-    setError("");
-  }, [resetKey]);
-
+  
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
