@@ -56,7 +56,7 @@ export async function getProducts() {
   return res.json();
 }
 
-export async function createProduct({ name, category, price }) {
+export async function createProduct({ code, name, category, price, quantity }) {
   const token = getToken();
   if (!token) throw new Error("Not authenticated");
 
@@ -66,7 +66,7 @@ export async function createProduct({ name, category, price }) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name, category, price }),
+    body: JSON.stringify({ code, name, category, price, quantity }),
   });
 
   if (!res.ok) throw new Error(await parseError(res));
