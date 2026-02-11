@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";   // ✅ ADĂUGAT
 import { getProducts } from "../api";
 import "./HomePage.css";
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();   // ✅ ADĂUGAT
 
   async function load() {
     setError("");
@@ -16,7 +19,6 @@ export default function HomePage() {
     }
   }
 
-  // ✅ badge helpers
   const getStockClass = (qty) => {
     if (qty === 0) return "stock-out";
     if (qty <= 3) return "stock-low";
@@ -59,7 +61,11 @@ export default function HomePage() {
 
       <div className="products-grid">
         {products.map((p) => (
-          <div key={p.id} className="product-card">
+          <div
+            key={p.id}
+            className="product-card"
+            onClick={() => navigate(`/products/${p.id}`)}   // ✅ ADĂUGAT
+          >
             <span className={`stock-badge ${getStockClass(p.quantity)}`}>
               {getStockText(p.quantity)}
             </span>

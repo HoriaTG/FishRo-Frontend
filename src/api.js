@@ -72,3 +72,9 @@ export async function createProduct({ code, name, category, price, quantity }) {
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
+
+export async function getProductById(id) {
+  const res = await fetch(`${API_URL}/products/${id}`);
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
