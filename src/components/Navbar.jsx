@@ -23,8 +23,14 @@ export default function Navbar({ me, onLogout, onToggleAccount }) {
         {me && (
           <>
             {me.role === "admin" && (
-              <Link to="/admin/products/new" style={styles.link}>
+              <Link to="/admin/products/new" style={styles.button}>
                 Adaugă produse
+              </Link>
+            )}
+
+            {me?.role === "admin" && (
+              <Link to="/admin/products" style={styles.button}>
+                Actualizează produse
               </Link>
             )}
 

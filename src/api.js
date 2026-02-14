@@ -78,3 +78,44 @@ export async function getProductById(id) {
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
+
+
+export async function updateProduct(id, patch) {
+  const token = localStorage.getItem("token"); // tokenul tău
+
+  const res = await fetch(`${API_URL}/products/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(patch),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
+
+  return res.json();
+}
+
+
+export async function deleteProduct(id) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_URL}/products/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
+
+  return res.json();
+}

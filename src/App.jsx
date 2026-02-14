@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AddProductPage from "./pages/AddProductPage";
 import ProductPage from "./pages/ProductPage";
+import AdminProductsPage from "./pages/AdminProductsPage";
 import { clearToken, getMe, getToken } from "./api";
 
 export default function App() {
@@ -73,6 +74,7 @@ useEffect(() => {
         <Route path="/admin/products/new" element={<AddProductPage me={me} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/products/:id" element={<ProductPage />} />
+        <Route path="/admin/products" element={<AdminProductsPage me={me} />} />
       </Routes>
     </div>
   );

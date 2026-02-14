@@ -19,72 +19,9 @@ export default function ProductPage() {
   const [images, setImages] = useState([]);
   const [idx, setIdx] = useState(0);
   const [anim, setAnim] = useState(""); // "slide-left" | "slide-right"
+
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 }); // procente
-
-
-  // (temporar) descriere/tech/video în frontend
-  const extra = useMemo(() => {
-    const byCode = {
-      "000000": {
-        description:
-          "Undiță telescopică potrivită pentru pescuit recreațional. Construcție ușoară, control bun, ideală pentru ieșiri rapide la apă.",
-        tech: [
-          ["Lungime", "2.7 m"],
-          ["Material", "Carbon compozit"],
-          ["Acțiune", "Medium"],
-          ["Greutate", "220 g"],
-        ],
-        video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-      },
-      "000001": {
-        description:
-          "Cârlig clasic pentru monturi simple. Vârf ascuțit, rezistență bună, recomandat pentru pești de talie mică-medie.",
-        tech: [
-          ["Mărime", "Nr. 6"],
-          ["Material", "Oțel carbon"],
-          ["Tip vârf", "Barbed"],
-          ["Culoare", "Nickel"],
-        ],
-        video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-      },
-      "000002": {
-        description:
-          "Mulineta spinning pentru lansări line și recuperare constantă. Potrivită pentru începători și intermediar.",
-        tech: [
-          ["Raport recuperare", "5.2:1"],
-          ["Rulmenți", "5+1"],
-          ["Capacitate fir", "0.25mm / 180m"],
-          ["Greutate", "290 g"],
-        ],
-        video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-      },
-      "000003": {
-        description:
-          "Scaun pliabil confortabil pentru pescuit/camping. Se pliază ușor și ocupă puțin spațiu la transport.",
-        tech: [
-          ["Material", "Textil + cadru metalic"],
-          ["Greutate max", "120 kg"],
-          ["Greutate scaun", "3.2 kg"],
-          ["Suport pahar", "Da"],
-        ],
-        video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-      },
-      "000004": {
-        description:
-          "Cort tip dome pentru 2 persoane. Montaj rapid, ventilație bună, ideal pentru ieșiri scurte la pescuit.",
-        tech: [
-          ["Capacitate", "2 persoane"],
-          ["Sezon", "3 sezoane"],
-          ["Impermeabilitate", "2000 mm"],
-          ["Greutate", "2.4 kg"],
-        ],
-        video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-      },
-    };
-
-    return byCode;
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +34,6 @@ export default function ProductPage() {
 
         setProduct(data);
 
-        // build candidate image urls
         const base = `/images/products/${data.code}.jpg`;
         const candidates = [base];
         for (let i = 1; i <= 6; i++) {
@@ -106,12 +42,11 @@ export default function ProductPage() {
 
         const checks = await Promise.all(candidates.map(loadImage));
         const existing = candidates.filter((_, i) => checks[i]);
-
-        // fallback dacă nu există nimic
         const safe = existing.length ? existing : ["/images/products/placeholder.jpg"];
 
         setImages(safe);
         setIdx(0);
+        setZoomed(false);
       } catch (e) {
         if (!cancelled) setError(e.message || "Eroare");
       }
@@ -138,37 +73,26 @@ export default function ProductPage() {
     setIdx((v) => v + 1);
   }
 
+  function setOriginFromEvent(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
 
+    const cx = Math.max(0, Math.min(100, x));
+    const cy = Math.max(0, Math.min(100, y));
 
-function setOriginFromEvent(e) {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setOrigin({ x: cx, y: cy });
+  }
 
-  // clamp 0..100
-  const cx = Math.max(0, Math.min(100, x));
-  const cy = Math.max(0, Math.min(100, y));
+  function handleImageClick(e) {
+    setOriginFromEvent(e);
+    setZoomed((z) => !z);
+  }
 
-  setOrigin({ x: cx, y: cy });
-}
-
-function handleImageClick(e) {
-  // click pe imagine -> toggle zoom
-  // când intri în zoom: setezi origin fix unde ai dat click
-  setOriginFromEvent(e);
-  setZoomed((z) => !z);
-}
-
-function handleImageMove(e) {
-  if (!zoomed) return;
-  setOriginFromEvent(e);
-}
-
-
-
-
-
-
+  function handleImageMove(e) {
+    if (!zoomed) return;
+    setOriginFromEvent(e);
+  }
 
   useEffect(() => {
     if (!anim) return;
@@ -176,17 +100,37 @@ function handleImageMove(e) {
     return () => clearTimeout(t);
   }, [anim]);
 
-  if (error) return <div className="product-wrap"><p className="err">{error}</p></div>;
-  if (!product) return <div className="product-wrap"><p>Loading...</p></div>;
+  // ✅ Tech details din backend (JSON string)
+  const tech = useMemo(() => {
+    if (!product?.tech_details) return [];
+    try {
+      const parsed = JSON.parse(product.tech_details);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [product?.tech_details]);
 
-  const meta = extra[product.code] || {
-    description: "Descriere indisponibilă momentan.",
-    tech: [["-", "-"]],
-    video: "https://www.youtube.com/embed/5Oe6b7d7K2M",
-  };
+  if (error)
+    return (
+      <div className="product-wrap">
+        <p className="err">{error}</p>
+      </div>
+    );
+
+  if (!product)
+    return (
+      <div className="product-wrap">
+        <p>Loading...</p>
+      </div>
+    );
 
   const atStart = idx === 0;
   const atEnd = idx === images.length - 1;
+
+  const descriptionText = product.description || "Descriere indisponibilă momentan.";
+  const videoUrl = product.video_url || "https://www.youtube.com/embed/5Oe6b7d7K2M";
+  const techRows = tech.length ? tech : [["-", "-"]];
 
   return (
     <div className="product-wrap">
@@ -195,7 +139,7 @@ function handleImageMove(e) {
         <div className="card">
           <div className="gallery">
             <div className="imgStage">
-                <img
+              <img
                 key={images[idx]}
                 className={`mainImg ${anim} ${zoomed ? "zoomed" : ""}`}
                 src={images[idx]}
@@ -203,9 +147,7 @@ function handleImageMove(e) {
                 style={zoomed ? { transformOrigin: `${origin.x}% ${origin.y}%` } : undefined}
                 onClick={handleImageClick}
                 onMouseMove={handleImageMove}
-                />
-
-
+              />
 
               <button
                 className={`navArrow left ${atStart ? "disabled" : ""}`}
@@ -230,7 +172,11 @@ function handleImageMove(e) {
               {images.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => { setZoomed(false); setIdx(i); }}
+                  className={`dot ${i === idx ? "active" : ""}`}
+                  onClick={() => {
+                    setZoomed(false);
+                    setIdx(i);
+                  }}
                   aria-label={`Image ${i + 1}`}
                 />
               ))}
@@ -244,32 +190,31 @@ function handleImageMove(e) {
 
           <div className="priceRow">
             <div className="price">{product.price} lei</div>
-                <div
-                className={`stock ${product.quantity === 0 ? "out" : product.quantity <= 3 ? "low" : "ok"}`}
-                data-tooltip={product.quantity > 0 ? `${product.quantity} produse rămase` : undefined}
-                >
-                {product.quantity === 0
-                    ? "Stoc epuizat"
-                    : product.quantity <= 3
-                    ? "Stoc limitat"
-                    : "În stoc"}
-                </div>
 
+            <div
+              className={`stock ${
+                product.quantity === 0 ? "out" : product.quantity <= 3 ? "low" : "ok"
+              }`}
+              data-tooltip={product.quantity > 0 ? `${product.quantity} produse rămase` : undefined}
+            >
+              {product.quantity === 0
+                ? "Stoc epuizat"
+                : product.quantity <= 3
+                ? "Stoc limitat"
+                : "În stoc"}
+            </div>
           </div>
-
-          <div className="muted">Cod produs: {product.code}</div>
 
           <button className="addBtn" disabled={product.quantity === 0}>
             Adaugă în coș
           </button>
-
         </div>
       </div>
 
       {/* Descriere */}
       <div className="card below">
         <h2>Descriere</h2>
-        <p className="desc">{meta.description}</p>
+        <p className="desc">{descriptionText}</p>
       </div>
 
       {/* Tabel tehnic */}
@@ -277,8 +222,8 @@ function handleImageMove(e) {
         <h2>Detalii tehnice</h2>
         <table className="techTable">
           <tbody>
-            {meta.tech.map(([k, v]) => (
-              <tr key={k}>
+            {techRows.map(([k, v], i) => (
+              <tr key={`${k}-${i}`}>
                 <td className="k">{k}</td>
                 <td className="v">{v}</td>
               </tr>
@@ -292,7 +237,7 @@ function handleImageMove(e) {
         <h2>Video</h2>
         <div className="videoWrap">
           <iframe
-            src={meta.video}
+            src={videoUrl}
             title="Product video"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
